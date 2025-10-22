@@ -60,6 +60,7 @@
 
 .calculator-button:disabled {
   background-color: #dee1e3;
+  pointer-events: none;
 }
 
 .calculator-button.--type-operator {
@@ -67,6 +68,11 @@
 }
 
 .calculator-button.--type-execute {
+  background-color: #0b57d0;
+  color: #fff;
+}
+
+.calculator-button.is-active {
   background-color: #0b57d0;
   color: #fff;
 }

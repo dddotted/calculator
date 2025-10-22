@@ -40,7 +40,7 @@ const operate = function(operator, a = 0, b = 0) {
       break;
   }
   if (isNaN(result)) result = "Error";
-  if (!result === "Error" && typeof result === "number") result = round(result);
+  if (result !== "Error" && typeof result === "number") result = round(result);
   display(result);
   return result;
 }
@@ -50,6 +50,8 @@ const reset = function() {
   num2 = "";
   operator = "";
   operatorFlag = false;
+  updateDotButtonState();
+  clearOperatorState();
 }
 
 
@@ -60,14 +62,45 @@ let operatorFlag = false;
 
 const displayEl = document.querySelector(".calculator-display");
 
+const dotButton = document.querySelector(".js-calculator-dot");
 const numberButtonList = document.querySelectorAll(".js-calculator-num");
 const executeButton = document.querySelector(".js-calculator-execute");
-const operatorButton = document.querySelectorAll(".js-calculator-operator");
+const operatorButtonList = document.querySelectorAll(".js-calculator-operator");
 const clearButton = document.querySelector(".js-calculator-clear");
 const backspaceButton = document.querySelector(".js-calculator-backspace");
 
 
 display(0);
+
+const getCurrentBuffer = () => operatorFlag ? "num2" : "num1";
+const getBufferVal = () => operatorFlag ? num2 : num1;
+const setBufferVal = (val) => operatorFlag ? (num2 = val) : (num1 = val);
+
+const isNotDot = () => !(String(getBufferVal()).includes("."));
+const updateDotButtonState = () => {
+  dotButton.disabled = !isNotDot();
+};
+
+const setOperatorState = (op) => {
+  if (!num1) return;
+  operatorButtonList.forEach(btn => {
+    btn.classList.toggle("is-active", btn.value === op);
+  });
+};
+
+const clearOperatorState = () => {
+  operatorButtonList.forEach(btn => btn.classList.remove("is-active"));
+};
+
+
+dotButton.addEventListener("click", (e) => {
+  if (!isNotDot()) return;
+  const val = getBufferVal();
+  const next = val ? `${val}.` : "0.";
+  setBufferVal(next);
+  display(next);
+  updateDotButtonState();
+});
 
 numberButtonList.forEach((button) => {
   button.addEventListener("click", (e) => {
@@ -81,14 +114,17 @@ numberButtonList.forEach((button) => {
   });
 });
 
-operatorButton.forEach((button) => {
+operatorButtonList.forEach((button) => {
   button.addEventListener("click", (e) => {
     if (num2) {
       num1 = operate(operator, +num1, +num2);
       num2 = "";
     }
+
     operator = e.target.value;
     operatorFlag = true;
+    setOperatorState(operator);
+    updateDotButtonState();
   });
 });
 
@@ -104,19 +140,23 @@ clearButton.addEventListener("click", (e) => {
 });
 
 backspaceButton.addEventListener("click", (e) => {
-  // if (operatorFlag) {
-  //   num2 = "";
-  //   display(num1);
-  // } else {
-  //   num1 = "";
-  // }
+  if (operatorFlag && !num2) {
+    operatorFlag = false;
+    operator = "";
+    clearOperatorState();
+    display(num1 || 0);
+    updateDotButtonState();
+    return;
+  }
+  const current = String(getBufferVal());
+  if (!current) return;
+
+  const next = current.slice(0, -1);
+  setBufferVal(next);
+  display(next || 0);
+  updateDotButtonState();
 });
 
 
 // test
-// 小数点を入力できるようにする。
-// 小数点は複数入力できない。表示に小数点が含まれている場合は小数点ボタンを無効にする
-
-// 間違った数字の入力を取り消せるバックスペースボタンを追加する
-
 // キーボードサポート
