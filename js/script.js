@@ -77,8 +77,31 @@ const getBufferVal = () => operatorFlag ? num2 : num1;
 const setBufferVal = (val) => operatorFlag ? (num2 = val) : (num1 = val);
 
 const isNotDot = () => !(String(getBufferVal()).includes("."));
+
+const updateDot = () => {
+  if (!isNotDot()) return;
+  const val = getBufferVal();
+  const next = val ? `${val}.` : "0.";
+  setBufferVal(next);
+  display(next);
+  updateDotButtonState();
+};
+
 const updateDotButtonState = () => {
   dotButton.disabled = !isNotDot();
+};
+
+const updateOperator = (op) => {
+  if (!num1) return;
+  if (num2) {
+    num1 = operate(operator, +num1, +num2);
+    num2 = "";
+  }
+
+  operator = op;
+  operatorFlag = true;
+  setOperatorState(operator);
+  updateDotButtonState();
 };
 
 const setOperatorState = (op) => {
@@ -92,54 +115,29 @@ const clearOperatorState = () => {
   operatorButtonList.forEach(btn => btn.classList.remove("is-active"));
 };
 
+const updateNumber = (val) => {
+  if (!operatorFlag) {
+    num1 += val;
+    display(num1);
+  } else {
+    num2 += val;
+    display(num2);
+  }
+};
 
-dotButton.addEventListener("click", (e) => {
-  if (!isNotDot()) return;
-  const val = getBufferVal();
-  const next = val ? `${val}.` : "0.";
-  setBufferVal(next);
-  display(next);
-  updateDotButtonState();
-});
-
-numberButtonList.forEach((button) => {
-  button.addEventListener("click", (e) => {
-    if (!operatorFlag) {
-      num1 += e.target.value;
-      display(num1);
-    } else {
-      num2 += e.target.value;
-      display(num2);
-    }
-  });
-});
-
-operatorButtonList.forEach((button) => {
-  button.addEventListener("click", (e) => {
-    if (num2) {
-      num1 = operate(operator, +num1, +num2);
-      num2 = "";
-    }
-
-    operator = e.target.value;
-    operatorFlag = true;
-    setOperatorState(operator);
-    updateDotButtonState();
-  });
-});
-
-executeButton.addEventListener("click", (e) => {
+const execute = () => {
   if (!operator || !num1 || !num2) return;
   operate(operator, +num1, +num2);
   reset();
-});
+};
 
-clearButton.addEventListener("click", (e) => {
+const clearAll = () => {
   reset();
   display(0);
-});
+};
 
-backspaceButton.addEventListener("click", (e) => {
+
+const backspaceOne = () => {
   if (operatorFlag && !num2) {
     operatorFlag = false;
     operator = "";
@@ -148,15 +146,75 @@ backspaceButton.addEventListener("click", (e) => {
     updateDotButtonState();
     return;
   }
-  const current = String(getBufferVal());
-  if (!current) return;
-
-  const next = current.slice(0, -1);
+  const cur = String(getBufferVal());
+  if (!cur) return;
+  const next = cur.slice(0, -1);
   setBufferVal(next);
   display(next || 0);
   updateDotButtonState();
+};
+
+
+dotButton.addEventListener("click", (e) => {
+  updateDot();
+});
+
+numberButtonList.forEach((button) => {
+  button.addEventListener("click", (e) => {
+    updateNumber(e.target.value);
+  });
+});
+
+operatorButtonList.forEach((button) => {
+  button.addEventListener("click", (e) => {
+    updateOperator(e.target.value);
+  });
+});
+
+executeButton.addEventListener("click", (e) => {
+  execute();
+});
+
+clearButton.addEventListener("click", (e) => {
+  clearAll();
+});
+
+backspaceButton.addEventListener("click", (e) => {
+  backspaceOne();
 });
 
 
-// test
-// キーボードサポート
+document.addEventListener("keydown", (e) => {
+  const k = e.key;
+
+  if (k >= "0" && k <= "9") {
+    updateNumber(k);
+    return;
+  }
+
+  if (k === ".") {
+    updateDot();
+    return;
+  }
+
+  if (["+","-","*","/"].includes(k)) {
+    updateOperator(k);
+    return;
+  }
+
+  if (k === "Enter" || k === "=") {
+    execute();
+    return;
+  }
+
+  if (k === "Escape" || k.toLowerCase() === "c") {
+    clearAll();
+    return;
+  }
+
+  if (k === "Backspace") {
+    e.preventDefault();
+    backspaceOne();
+    return;
+  }
+});
