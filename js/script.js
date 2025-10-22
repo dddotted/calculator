@@ -1,24 +1,54 @@
 "use strict";
 
 const add = (a, b) => a + b;
-
 const subtract = (a, b) => a - b;
-
 const multiply = (a, b) => a * b;
-
 const divide = (a, b) => {
   if (b === 0) return "Error";
   return a / b;
 };
-
 const round = (val, digits = 11) => {
   const factor = Math.pow(10, digits);
   return Math.round(val * factor) / factor;
 }
 
-const display = function(val) {
-  displayEl.textContent = val;
-}
+
+let num1 = "";
+let num2 = "";
+let operator = "";
+let operatorFlag = false;
+
+
+const displayEl = document.querySelector(".calculator-display");
+const dotButton = document.querySelector(".js-calculator-dot");
+const numberButtonList = document.querySelectorAll(".js-calculator-num");
+const executeButton = document.querySelector(".js-calculator-execute");
+const operatorButtonList = document.querySelectorAll(".js-calculator-operator");
+const clearButton = document.querySelector(".js-calculator-clear");
+const backspaceButton = document.querySelector(".js-calculator-backspace");
+
+
+// UI helpers
+const display = (val) => displayEl.textContent = val;
+const setOperatorState = (op) => {
+  if (!num1) return;
+  operatorButtonList.forEach(btn => {
+    btn.classList.toggle("is-active", btn.value === op);
+  });
+};
+const clearOperatorState = () => {
+  operatorButtonList.forEach(btn => btn.classList.remove("is-active"));
+};
+const updateDotButtonState = () => {
+  dotButton.disabled = !isAppendDot();
+};
+
+
+// Buffer helpers
+const getBufferVal = () => operatorFlag ? num2 : num1;
+const setBufferVal = (val) => operatorFlag ? (num2 = val) : (num1 = val);
+const isAppendDot = () => !(String(getBufferVal()).includes("."));
+
 
 const operate = function(operator, a = 0, b = 0) {
   let result = 0;
@@ -54,32 +84,18 @@ const reset = function() {
   clearOperatorState();
 }
 
+const appendDigit = (val) => {
+  if (!operatorFlag) {
+    num1 += val;
+    display(num1);
+  } else {
+    num2 += val;
+    display(num2);
+  }
+};
 
-let num1 = "";
-let num2 = "";
-let operator = "";
-let operatorFlag = false;
-
-const displayEl = document.querySelector(".calculator-display");
-
-const dotButton = document.querySelector(".js-calculator-dot");
-const numberButtonList = document.querySelectorAll(".js-calculator-num");
-const executeButton = document.querySelector(".js-calculator-execute");
-const operatorButtonList = document.querySelectorAll(".js-calculator-operator");
-const clearButton = document.querySelector(".js-calculator-clear");
-const backspaceButton = document.querySelector(".js-calculator-backspace");
-
-
-display(0);
-
-const getCurrentBuffer = () => operatorFlag ? "num2" : "num1";
-const getBufferVal = () => operatorFlag ? num2 : num1;
-const setBufferVal = (val) => operatorFlag ? (num2 = val) : (num1 = val);
-
-const isNotDot = () => !(String(getBufferVal()).includes("."));
-
-const updateDot = () => {
-  if (!isNotDot()) return;
+const appendDot = () => {
+  if (!isAppendDot()) return;
   const val = getBufferVal();
   const next = val ? `${val}.` : "0.";
   setBufferVal(next);
@@ -87,11 +103,7 @@ const updateDot = () => {
   updateDotButtonState();
 };
 
-const updateDotButtonState = () => {
-  dotButton.disabled = !isNotDot();
-};
-
-const updateOperator = (op) => {
+const applyOperator = (op) => {
   if (!num1) return;
   if (num2) {
     num1 = operate(operator, +num1, +num2);
@@ -104,27 +116,6 @@ const updateOperator = (op) => {
   updateDotButtonState();
 };
 
-const setOperatorState = (op) => {
-  if (!num1) return;
-  operatorButtonList.forEach(btn => {
-    btn.classList.toggle("is-active", btn.value === op);
-  });
-};
-
-const clearOperatorState = () => {
-  operatorButtonList.forEach(btn => btn.classList.remove("is-active"));
-};
-
-const updateNumber = (val) => {
-  if (!operatorFlag) {
-    num1 += val;
-    display(num1);
-  } else {
-    num2 += val;
-    display(num2);
-  }
-};
-
 const execute = () => {
   if (!operator || !num1 || !num2) return;
   operate(operator, +num1, +num2);
@@ -135,7 +126,6 @@ const clearAll = () => {
   reset();
   display(0);
 };
-
 
 const backspaceOne = () => {
   if (operatorFlag && !num2) {
@@ -155,19 +145,20 @@ const backspaceOne = () => {
 };
 
 
+// Event
 dotButton.addEventListener("click", (e) => {
-  updateDot();
+  appendDot();
 });
 
 numberButtonList.forEach((button) => {
   button.addEventListener("click", (e) => {
-    updateNumber(e.target.value);
+    appendDigit(e.target.value);
   });
 });
 
 operatorButtonList.forEach((button) => {
   button.addEventListener("click", (e) => {
-    updateOperator(e.target.value);
+    applyOperator(e.target.value);
   });
 });
 
@@ -183,22 +174,21 @@ backspaceButton.addEventListener("click", (e) => {
   backspaceOne();
 });
 
-
 document.addEventListener("keydown", (e) => {
   const k = e.key;
 
   if (k >= "0" && k <= "9") {
-    updateNumber(k);
+    appendDigit(k);
     return;
   }
 
   if (k === ".") {
-    updateDot();
+    appendDot();
     return;
   }
 
   if (["+","-","*","/"].includes(k)) {
-    updateOperator(k);
+    applyOperator(k);
     return;
   }
 
@@ -218,3 +208,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 });
+
+
+// Init
+display(0);
